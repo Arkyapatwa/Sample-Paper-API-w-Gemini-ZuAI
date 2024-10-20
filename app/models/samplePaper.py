@@ -7,7 +7,7 @@ class Question(BaseModel):
     answer: str
     type: str
     question_slug: str
-    refernce_id: str
+    reference_id: str
     hint: str
     params: Dict = {}
 
@@ -31,3 +31,4 @@ class SamplePaper(BaseModel):
     tags: List[str]
     chapters: List[str]
     sections: List[Section]
+    

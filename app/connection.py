@@ -4,8 +4,8 @@ import os
 
 load_dotenv()
 
-MONGO_URL_DB = os.getenv("MONGO_URL_DB")
-CONN_STRING, DB_NAME = "".join(MONGO_URL_DB.split("/")[:-1]), MONGO_URL_DB.split("/")[-1]
+CONN_STRING = os.getenv("CONN_STRING")
+DB_NAME = os.getenv("DB_NAME")
 COLLECTION_NAME = "samplePaper"
 
 client = MongoClient(CONN_STRING)

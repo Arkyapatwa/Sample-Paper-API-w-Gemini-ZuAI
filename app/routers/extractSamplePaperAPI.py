@@ -4,7 +4,7 @@ from app.internal.extractSamplePaper import extract_from_pdf, extract_from_text
 import os, shutil
 
 router = APIRouter()
-UPLOAD_DIR = "./app/uploads"
+UPLOAD_DIR = "./uploads"
 
 
 @router.post("/extract/pdf")

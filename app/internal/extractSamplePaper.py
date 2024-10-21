@@ -82,6 +82,5 @@ async def extract_from_pdf(file_path: str):
     ))
     
     result = str(response.text.replace('json', "").replace("```","").strip()).replace("'","\"")
-    print(result)
     return json.loads(result)
     

@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from app.models.samplePaper import SamplePaper
 from app.models.updateSamplePaper import UpdateSamplePaper
@@ -8,6 +8,7 @@ from typing import List
 from fastapi import HTTPException
 from bson import ObjectId
 import logging
+
 
 router = APIRouter()
 collection = get_collection()
@@ -32,20 +33,27 @@ async def add_paper(samplePaper: SamplePaper):
     
 
 @router.get("/papers/{paper_id}", response_description="Returns sample paper")
-async def get_paper(paper_id: str):
+async def get_paper(paper_id: str, request: Request):
     """
     Fetch a sample paper record by id.
     """
 
     try:
-        paperId = ObjectId(paper_id)
-        result = collection.find_one({"_id": paperId})
-
-        if result is None:
-            return JSONResponse(status_code=404, content={"message": "Sample paper not found"})
+        samplePaper = request.app.state.redis.get(paper_id)
         
-        result["_id"] = paper_id
-        return JSONResponse(status_code=200, content=result)
+        if samplePaper is None:
+            paperId = ObjectId(paper_id)
+            samplePaper = collection.find_one({"_id": paperId})
+
+            if samplePaper is None:
+                return JSONResponse(status_code=404, content={"message": "Sample paper not found"})
+            
+            samplePaper["_id"] = paper_id
+            request.app.state.redis.set(paper_id, json.dumps(samplePaper))
+            
+            return JSONResponse(status_code=200, content=samplePaper)
+        
+        return JSONResponse(status_code=200, content=json.loads(samplePaper))
     except Exception as e:
         raise HTTPException(status_code=500, detail="Something went wrong: " + str(e))
     

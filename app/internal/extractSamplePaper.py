@@ -2,13 +2,15 @@ import json
 import re
 import google.generativeai as genai
 from dotenv import load_dotenv
-# from app.models.samplePaper import SamplePaper, Section, Question
+from app.connection import get_task_collection
+from bson import ObjectId
 import os
 
 load_dotenv()
 
 genai.configure(api_key=os.environ["API_KEY"])
 model = genai.GenerativeModel("gemini-1.5-flash", system_instruction="You are a Teacher. Analyze the context and extract the sample paper data in JSON format.")
+task_collection = get_task_collection()
 
 from pydantic import BaseModel, Field
 from typing import List, Dict
@@ -69,18 +71,21 @@ def extract_from_text(text: str):
     return result
 
 
-async def extract_from_pdf(file_path: str):
-    print(file_path)
+async def extract_from_pdf(file_path: str, taskId: str):
+    
+    taskId = ObjectId(taskId)
     
     base_prompt = f"Based on the following file content, extract the relevant information in JSON."
     json_model = model_to_json(SamplePaper(title="title1", type="type1", time=1, marks=1, params={}, tags=[], chapters=[], sections=[Section(marks_per_question=1, type="type1", questions=[Question(question="question1", answer="answer1", type="type1", question_slug="question1", reference_id="reference1", hint="hint1", params={})])]))
     optimized_prompt = base_prompt + f'.Please provide a response in a structured JSON format that matches the following model: {json_model}'
     
     sample_pdf = genai.upload_file(path=file_path, display_name="sample_pdf")
-    response = model.generate_content([optimized_prompt, sample_pdf], generation_config=genai.types.GenerationConfig(
+    response = await model.generate_content_async([optimized_prompt, sample_pdf], generation_config=genai.types.GenerationConfig(
         temperature=0.1,
     ))
     
     result = str(response.text.replace('json', "").replace("```","").strip()).replace("'","\"")
-    return json.loads(result)
+    
+    task_collection.update_one({"_id": taskId}, {"$set": {"task_status": "completed", "result": json.loads(result)}})
+
     
